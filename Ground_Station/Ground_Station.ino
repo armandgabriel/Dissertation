@@ -35,8 +35,8 @@ char topic9[] = "drone/9/status";
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // LORA Setup
-#define localAddress 0x4d
-#define targetAddress 0x2f
+byte localAddress = 0x4d;
+byte targetAddress = 0x2f;
 
 
 
