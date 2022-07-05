@@ -27,6 +27,14 @@ char topic7[] = "drone/7/callDrone";
 char topic8[] = "drone/8/landDrone";
 char topic9[] = "drone/9/status";
 
+typedef struct { 
+  uint32_t rawLat;
+  uint32_t rawLng;
+  double rawSpeed;
+  double rawAltitude;
+} GPS_DATA;
+
+GPS_DATA gD;
 
 // Screen Setup
 #define SCREEN_WIDTH 128
@@ -370,16 +378,33 @@ void receiveDataStream() {
     String text = "";
     while(LoRa.available()) {
       int inChar = LoRa.read();
-      // text += (char)inChar;
+       text += (char)inChar;
     }
+    Serial.println("Size of text");
+    Serial.println(incLength);
+    Serial.println(text);
     //...
+//    gD.rawLat = LoRa.read();
+//    gD.rawLng = LoRa.read();
+//    gD.rawSpeed = LoRa.read();
+//    gD.rawAltitude = LoRa.read();
+    //int gpsDataLength = LoRa.read();
+    //String gpsData = "";
+    //while(LoRa.available()) {
+    //  int inChar = LoRa.read();
+    //  gpsData += (char)inChar;
+    //}
+    
     LoRa.packetRssi();
     int length = sizeof(text);
-    displayOLED("RECEIVED LoRa message...", "Content Length", incLength + "", "");
-    byte* p = (byte*)malloc(length);
+    
+    byte* p = (byte*)malloc(incLength);
     //memcpy(p, text, length);
-    text.getBytes(p, length);
-    pub(topic9, p, length); 
+    text.getBytes(p, incLength);
+    displayOLED("RECEIVED LoRa message...", "Content Length", incLength + "", text);
+    //Serial.println(text);
+    pub(topic9, p, incLength); 
+    free(p);
   }
 }
 
