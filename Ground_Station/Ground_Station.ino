@@ -7,6 +7,10 @@
 #include <Adafruit_SSD1306.h>
 #include <LoRa.h>
 
+// counter display gps data
+long lastTime = millis();
+bool isDisplayGPSData = false;
+
 // WIFI Connection
 char ssid[] = "DIGI-9jB5";
 char pass[] = "zw6rxkaa";
@@ -201,6 +205,10 @@ void subscribeTopics() {
 
 void loop() {
   //mqttClient.poll();
+  long elapsedTime = millis() - lastTime;
+  lastTime = lastTime + elapsedTime;
+
+  
   if(!mqttClient.connected()) {
     //mqttClient.loop();
     reconnect();
@@ -208,13 +216,31 @@ void loop() {
   mqttClient.loop();
   receiveDataStream();
 
-//  if(gD.rawLat > 0) {
-//    Serial.println("GPS DATA: ");
-//    Serial.println(gD.rawLat);
-//    Serial.println(gD.rawLng);
-//    Serial.println(gD.rawSpeed);
-//    Serial.println(gD.rawAltitude);
-//  }
+  displayGPSData(elapsedTime);
+}
+
+void displayGPSData(long elapsedTime) {
+
+  static long readGD = 0;
+  readGD = readGD + elapsedTime;
+  if(readGD >= 5000) {
+    isDisplayGPSData = !isDisplayGPSData;
+      if(isDisplayGPSData) {
+        if(gD.rawLat > 0) {
+        Serial.println("GPS DATA: ");
+        Serial.println(gD.rawLat);
+        Serial.println(gD.rawLng);
+        Serial.println(gD.rawSpeed);
+        Serial.println(gD.rawAltitude);
+      } else {
+        Serial.println("No GPS Data!");
+      }
+      readGD = readGD - 5000;
+    }
+    
+  }
+  
+  
 }
 
 void displayOLED(String text) {
@@ -284,11 +310,39 @@ void callback(char* topic, byte* payload, unsigned int length) {
       Serial.print((char)payload[i]);
     }
     sendDataStream(payload, length);
+
+    if(gD.rawLat > 0) {
+      int gDSize = 6;
+      byte* gpsPayload = (byte*) malloc(gDSize);
+      for(int i = 0; i < gDSize; i++) {
+        if(i == 0) { 
+          gpsPayload[i] = 4;
+        }
+        if(i == 1) {
+          gpsPayload[i] = 2;
+        }
+        if(i == 2) {
+          gpsPayload[i] = gD.rawLat;
+        }
+        if(i == 3) {
+          gpsPayload[i] = gD.rawLng;
+        }
+        if(i == 4) {
+          gpsPayload[i] = gD.rawSpeed;
+        }
+        if(i == 5) {
+          gpsPayload[i] = gD.rawAltitude;
+        }
+      }
+      pub(topic9, gpsPayload, gDSize);
+      
+    }
+    
     Serial.println();
   }
 
   if(strcmp(topic, topic5) == 0) {
-    Serial.println("Message arrived [");
+    Serial.print("Message arrived [");
     Serial.print(topic);
     Serial.print("] ");
     for(int i = 0; i < length; i++) {
@@ -419,7 +473,7 @@ void receiveDataStream() {
     //text.getBytes(p, incLength);
     displayOLED("RECEIVED LoRa message...", "Content Length", incLength + "", "");
     //Serial.println(text);
-    pub(topic9, responseMessage, incLength); 
+    //pub(topic9, responseMessage, incLength); 
     //free(p);
   }
 }

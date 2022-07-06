@@ -9,6 +9,8 @@
 static struct pt pt1; // command proto
 static struct pt pt2;
 
+bool sendGPSData = false;
+
 static int protothreadCheckCommands(struct pt *pt)
 {
   static unsigned long lastTimeCheckedCommand = 0;
@@ -115,8 +117,8 @@ void loop() {
   //delay(1500);
 
 
-  //long elapsedTime = millis() - lastTime;
-  //lastTime = lastTime + elapsedTime;
+  long elapsedTime = millis() - lastTime;
+  lastTime = lastTime + elapsedTime;
   
   receiveDataStream();
   //String t = "Hello";
@@ -132,6 +134,28 @@ void loop() {
  protothreadCheckCommands(&pt1);
   //testSpinMotors();
  protothreadReadDPS(&pt2);
+
+  sendGPSDataF(elapsedTime);
+
+ 
+}
+
+void sendGPSDataF(long elapsedTime) {
+  static long readGD = 0;
+  readGD = readGD + elapsedTime;
+  if(readGD >= 5000) {
+    sendGPSData = !sendGPSData;
+    if(sendGPSData) {
+      if(gD.rawLat > 0) {
+        int gpsPayloadSize = 2;
+        byte* gpsPayload = (byte*)malloc(gpsPayloadSize);
+        gpsPayload[0] = 4;
+        gpsPayload[1] = 2;
+        sendDataStream(gpsPayload, gpsPayloadSize);
+        readGD = readGD - 5000;
+      }
+    }
+  }
 }
 
 void checkCommands() {
@@ -165,6 +189,7 @@ void checkCommands() {
   if (cmd.cmd == 4) {
     Serial.println("Checking drone status...");
     checkStatus();
+    cmd.cmd = 0;
   }
   if (cmd.cmd == 5) {
     Serial.println("Assigning task to drone...");
