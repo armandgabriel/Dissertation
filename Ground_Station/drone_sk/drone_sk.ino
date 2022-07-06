@@ -4,6 +4,21 @@
 #include <Wire.h>
 #include <Servo.h>
 #include <Arduino_LSM6DS3.h>
+#include <pt.h>
+
+static struct pt pt1;
+
+static int protothreadCheckCommands(struct pt *pt)
+{
+  static unsigned long lastTimeBlink = 0;
+  PT_BEGIN(pt);
+  while(1) {
+    lastTimeBlink = millis();
+    PT_WAIT_UNTIL(pt, millis() - lastTimeBlink > 1000);
+    checkCommands();
+  }
+  PT_END(pt);
+}
 
 long lastTime = millis();
 bool isCKCmd = false;
@@ -32,6 +47,20 @@ typedef struct {
 
 COMMAND cmd;
 
+// SERVO 
+Servo motor1;
+#define MOTOR_PIN_1 7
+Servo motor2;
+#define MOTOR_PIN_2 6
+Servo motor3;
+#define MOTOR_PIN_3 5
+Servo motor4;
+#define MOTOR_PIN_4 4
+
+bool testRunMotors = false;
+
+bool isINITMotorPhase = true;
+
 void setup() {
   Serial.begin(9600);
   while(!Serial);
@@ -45,6 +74,13 @@ void setup() {
     while(1);
   }
 
+//  // Setup Motor
+//  motor1.attach(MOTOR_PIN_1);
+//  motor2.attach(MOTOR_PIN_2);
+//  motor3.attach(MOTOR_PIN_3);
+//  motor4.attach(MOTOR_PIN_4);
+
+PT_INIT(&pt1);
 }
 
 void loop() {
@@ -54,8 +90,8 @@ void loop() {
   //delay(1500);
 
 
-  long elapsedTime = millis() - lastTime;
-  lastTime = lastTime + elapsedTime;
+  //long elapsedTime = millis() - lastTime;
+  //lastTime = lastTime + elapsedTime;
   
   receiveDataStream();
   //String t = "Hello";
@@ -67,55 +103,51 @@ void loop() {
   //sendDataStream(plain, lengT);
 
  // Verificare comenzi la 1 secunda
- checkCommands(elapsedTime);
+ //checkCommands(elapsedTime);
+ protothreadCheckCommands(&pt1);
+ testSpinMotors();
   
 }
 
-void checkCommands(long elapsedTime) {
-
-  long ckCMTime = 0;
-
-  ckCMTime = ckCMTime + elapsedTime;
-
-  if(ckCMTime >= 1000) {
-    isCKCmd = !isCKCmd;
-    if(isCKCmd) {
-      if(cmd.cmd == 1) {
-          // Start Drone
-          Serial.println("Drone is starting ");
-          bool isStart = startDrone();
-      }
-      if (cmd.cmd == 2) {
-          Serial.println("Drone is stoping ");
-          bool isStop = stopDrone();
-      } 
-      if (cmd.cmd == 3) {
-        Serial.println("Disconnecting...");
-        bool isDisconnected = disconnectDrone();
-      }
-      if (cmd.cmd == 4) {
-        Serial.println("Checking drone status...");
-        checkStatus();
-      }
-      if (cmd.cmd == 5) {
-        Serial.println("Assigning task to drone...");
-        assignTask();
-      }
-      if (cmd.cmd == 6) {
-        Serial.println("Starting the fly procedure...");
-        bool isFlight = isFlying();
-      }
-      if (cmd.cmd == 7) {
-        Serial.println("Calling the drone home...");
-        callDrone();
-      }
-      if (cmd.cmd == 8) {
-        Serial.println("Landing the drone home...");
-        landDrone();
-      }
-      ckCMTime = ckCMTime - 1000;
-    }
+void checkCommands() {
+  Serial.println("Checking commands...");
+  Serial.println("COMMAND: ");
+  Serial.println(cmd.cmd);
+  if(cmd.cmd == 1) {
+      // Start Drone
+      Serial.println("Drone is starting ");
+      bool isStart = startDrone();
+      //cmd.cmd = 0;
   }
+  if (cmd.cmd == 2) {
+      Serial.println("Drone is stoping ");
+      bool isStop = stopDrone();
+  } 
+  if (cmd.cmd == 3) {
+    Serial.println("Disconnecting...");
+    bool isDisconnected = disconnectDrone();
+  }
+  if (cmd.cmd == 4) {
+    Serial.println("Checking drone status...");
+    checkStatus();
+  }
+  if (cmd.cmd == 5) {
+    Serial.println("Assigning task to drone...");
+    assignTask();
+  }
+  if (cmd.cmd == 6) {
+    Serial.println("Starting the fly procedure...");
+    bool isFlight = isFlying();
+  }
+  if (cmd.cmd == 7) {
+    Serial.println("Calling the drone home...");
+    callDrone();
+  }
+  if (cmd.cmd == 8) {
+    Serial.println("Landing the drone home...");
+    landDrone();
+  }
+
 }
 
 static void smartDelay(unsigned long ms)
@@ -214,12 +246,30 @@ void receiveDataStream() {
 }
 
 bool startDrone() {
-
+  if(isINITMotorPhase) {
+    
+    testRunMotors = true;
+    motor1.attach(MOTOR_PIN_1);
+    motor2.attach(MOTOR_PIN_2);
+    motor3.attach(MOTOR_PIN_3);
+    motor4.attach(MOTOR_PIN_4); 
+    int test_motor = 250;
+    int speed_1 = map(test_motor, 0, 1023, 0, 180);
+    int speed_2 = map(test_motor, 0, 1023, 0, 180);
+    int speed_3 = map(test_motor, 0, 1023, 0, 180);
+    int speed_4 = map(test_motor, 0, 1023, 0, 180);
+    motor1.write(speed_1);
+    motor2.write(speed_2);
+    motor3.write(speed_3);
+    motor4.write(speed_4);
+    isINITMotorPhase = false;
+  }
+  
   return false;
 }
 
 bool stopDrone() {
-
+  testRunMotors = false;
   return false;
 }
 
@@ -247,4 +297,18 @@ void callDrone() {
 
 void landDrone() {
   
+}
+
+void testSpinMotors() {
+  if(testRunMotors) {
+    int test_motor = 250;
+    int speed_1 = map(test_motor, 0, 1023, 0, 180);
+    int speed_2 = map(test_motor, 0, 1023, 0, 180);
+    int speed_3 = map(test_motor, 0, 1023, 0, 180);
+    int speed_4 = map(test_motor, 0, 1023, 0, 180);
+    motor1.write(speed_1);
+    motor2.write(speed_2);
+    motor3.write(speed_3);
+    motor4.write(speed_4);
+  }
 }
