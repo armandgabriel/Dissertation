@@ -61,9 +61,15 @@ GPS_DATA gD;
 typedef struct {
   byte cmd;
   byte ack;
+  uint32_t targetLat;
+  uint32_t targetLng;
+  char mode = 'N';
+  uint32_t targetAltitude;
 } COMMAND;
 
 COMMAND cmd;
+
+bool executeTask = false;
 
 // SERVO 
 Servo motor1;
@@ -135,7 +141,7 @@ void loop() {
   //testSpinMotors();
  protothreadReadDPS(&pt2);
 
-  sendGPSDataF(elapsedTime);
+ sendGPSDataF(elapsedTime);
 
  
 }
@@ -152,8 +158,8 @@ void sendGPSDataF(long elapsedTime) {
         gpsPayload[0] = 4;
         gpsPayload[1] = 2;
         sendDataStream(gpsPayload, gpsPayloadSize);
-        readGD = readGD - 5000;
       }
+      readGD = readGD - 5000;
     }
   }
 }
@@ -287,6 +293,7 @@ void receiveDataStream() {
     int inChar = LoRa.read();
     text += (char) inChar;
   }
+  int commandNo = LoRa.read();
   LoRa.packetRssi();
   Serial.println(text);
 
@@ -297,7 +304,7 @@ void receiveDataStream() {
   strcpy(text_array, text.c_str());
   
   char * token = strtok(text_array, "#");
-  String commands[2];
+  String commands[commandNo];
   while(token != NULL) {
     Serial.println(token);
     commands[index_T] = token;
@@ -307,6 +314,12 @@ void receiveDataStream() {
   Serial.println("PRINTING COMMANDS:");
   Serial.println(commands[0]);
   Serial.println(commands[1]);
+  if(commandNo == 6) {
+    cmd.targetLat = (uint32_t)LoRa.read();
+    cmd.targetLng = LoRa.read();
+    cmd.mode = LoRa.read();
+    cmd.targetAltitude = (uint32_t)LoRa.read();
+  }
   cmd.cmd = (byte) commands[0].toInt();
   cmd.ack = (byte) commands[1].toInt();
   Serial.println("Command stack display:");
@@ -362,7 +375,15 @@ void checkStatus() {
 }
 
 void assignTask() {
-  
+  if(cmd.mode == 'P') {
+    
+  }
+  if(cmd.mode == '') {
+    
+  }
+  if(cmd.mode == '') {
+    
+  }
 }
 
 bool isFlying() {

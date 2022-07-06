@@ -263,7 +263,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     for(int i = 0; i < length; i++) {
       Serial.print((char)payload[i]);
     }
-    sendDataStream(payload, length);
+    sendDataStream(payload, length, 0);
     Serial.println();
   }
   
@@ -276,7 +276,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 //    }
     Serial.println((char*)payload);
     Serial.println(length);
-    sendDataStream(payload, length);
+    sendDataStream(payload, length, 0);
     Serial.println();
   }
 
@@ -287,7 +287,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     for(int i = 0; i < length; i++) {
       Serial.print((char)payload[i]);
     }
-    sendDataStream(payload, length);
+    sendDataStream(payload, length, 0);
     Serial.println();
   }
 
@@ -298,7 +298,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     for(int i = 0; i < length; i++) {
       Serial.print((char)payload[i]);
     }
-    sendDataStream(payload, length);
+    sendDataStream(payload, length, 0);
     Serial.println();
   }
 
@@ -309,7 +309,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     for(int i = 0; i < length; i++) {
       Serial.print((char)payload[i]);
     }
-    sendDataStream(payload, length);
+    sendDataStream(payload, length, 0);
 
     if(gD.rawLat > 0) {
       int gDSize = 6;
@@ -348,7 +348,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     for(int i = 0; i < length; i++) {
       Serial.print((char)payload[i]);
     }
-    sendDataStream(payload, length);
+    sendDataStream(payload, length, 4);
     Serial.println();
   }
 
@@ -359,7 +359,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     for(int i = 0; i < length; i++) {
       Serial.print((char)payload[i]);
     }
-    sendDataStream(payload, length);
+    sendDataStream(payload, length, 0);
     Serial.println();
   }
 
@@ -371,7 +371,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     for(int i = 0; i < length; i++) {
       Serial.print((char)payload[i]);
     }
-    sendDataStream(payload, length);
+    sendDataStream(payload, length, 0);
     Serial.println();
   }
 
@@ -382,7 +382,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     for(int i = 0; i < length; i++) {
       Serial.print((char)payload[i]);
     }
-    sendDataStream(payload, length);
+    sendDataStream(payload, length, 0);
     Serial.println();
   }
   
@@ -420,11 +420,16 @@ void reconnect() {
 }
 
 // LoRa
-void sendDataStream(byte* message, unsigned int length) {
+void sendDataStream(byte* message, unsigned int length, int commandNo) {
   displayOLED("SENDING LoRa message...", "Content Length", length + "", "");
   LoRa.beginPacket();
   //LoRa.print(message);
   LoRa.write((uint8_t*)message, length);
+  if(commandNo == 4) {
+    LoRa.write(6);
+  } else {
+    LoRa.write(2);
+  }
   LoRa.endPacket();
 }
 
