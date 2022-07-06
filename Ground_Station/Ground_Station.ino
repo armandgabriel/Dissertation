@@ -53,7 +53,7 @@ void setup() {
   Serial.begin(9600);
   // Serial Communication send data on USB
   // On Standalone comment this line
-  while(!Serial) { ; }
+  //while(!Serial) { ; }
 
   //OLED SETUP
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
@@ -330,7 +330,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 void pub(char* topic, byte* payload, unsigned int length) {
   byte* p =(byte*)malloc(length);
   memcpy(p, payload, length);
-  mqttClient.publish(topic, p, length);
+  mqttClient.publish(topic, p, length, false);
   free(p);
 }
 
@@ -375,14 +375,18 @@ void receiveDataStream() {
     byte msgID = LoRa.read();
     byte incLength = LoRa.read();
     
-    String text = "";
-    while(LoRa.available()) {
-      int inChar = LoRa.read();
-       text += (char)inChar;
+    //String text = "";
+    //while(LoRa.available()) {
+    //  int inChar = LoRa.read();
+    //   text += (char)inChar;
+    //}
+    byte* responseMessage = (byte*)malloc(incLength);//[incLength];
+    for(int i = 0; i < incLength; i++) {
+      responseMessage[i] = (byte) LoRa.read();
     }
     Serial.println("Size of text");
     Serial.println(incLength);
-    Serial.println(text);
+    //Serial.println(text);
     //...
 //    gD.rawLat = LoRa.read();
 //    gD.rawLng = LoRa.read();
@@ -396,15 +400,15 @@ void receiveDataStream() {
     //}
     
     LoRa.packetRssi();
-    int length = sizeof(text);
+    //int length = sizeof(text);
     
-    byte* p = (byte*)malloc(incLength);
+    //byte* p = (byte*)malloc(incLength);
     //memcpy(p, text, length);
-    text.getBytes(p, incLength);
-    displayOLED("RECEIVED LoRa message...", "Content Length", incLength + "", text);
+    //text.getBytes(p, incLength);
+    displayOLED("RECEIVED LoRa message...", "Content Length", incLength + "", "");
     //Serial.println(text);
-    pub(topic9, p, incLength); 
-    free(p);
+    pub(topic9, responseMessage, incLength); 
+    //free(p);
   }
 }
 
