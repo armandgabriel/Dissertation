@@ -29,7 +29,7 @@ static int protothreadReadDPS(struct pt *pt)
   while(1) {
     lastTimeCheckedCommand = millis();
     PT_WAIT_UNTIL(pt, millis() - lastTimeCheckedCommand > 10);
-    Serial.println("Checking GPS");
+    //Serial.println("Checking GPS");
     readGPS();
     PT_WAIT_UNTIL(pt, millis() - lastTimeCheckedCommand > 10);
   }
@@ -49,8 +49,8 @@ TinyGPSPlus gps;
 typedef struct {
   uint32_t rawLat;
   uint32_t rawLng;
-  double rawSpeed;
-  double rawAltitude;
+  uint32_t rawSpeed;
+  uint32_t rawAltitude;
   
 } GPS_DATA;
 
@@ -202,18 +202,20 @@ void readGPS() {
   while(Serial1.available() > 0) {
     gps.encode(Serial1.read());
     if(gps.location.isUpdated()) {
-      Serial.println("*************************************");
-      Serial.println("Reading gps Data");
-      gD.rawLat = gps.location.rawLat().billionths;
-      gD.rawLng = gps.location.rawLng().billionths;
+      //Serial.println("*************************************");
+      //Serial.println("Reading gps Data");
+      //gD.rawLat = gps.location.rawLat().billionths;
+      //gD.rawLng = gps.location.rawLng().billionths;
+      gD.rawLat = gps.location.lat();
+      gD.rawLng = gps.location.lng();
       gD.rawSpeed = gps.speed.mps();
       gD.rawAltitude = gps.altitude.meters();
-      Serial.println("GPS DATA");
-      Serial.println(gD.rawLat);
-      Serial.println(gD.rawLng);
-      Serial.println(gD.rawSpeed);
-      Serial.println(gD.rawAltitude);
-      Serial.println("*************************************");
+//      Serial.println("GPS DATA");
+//      Serial.println(gD.rawLat);
+//      Serial.println(gD.rawLng);
+//      Serial.println(gD.rawSpeed);
+//      Serial.println(gD.rawAltitude);
+//      Serial.println("*************************************");
     }
   }
 }
@@ -227,6 +229,12 @@ void sendDataStream(byte* message, unsigned int length) {
   LoRa.write(byte(counterID));
   LoRa.write(length);
   LoRa.write((uint8_t*)message, length);
+  //LoRa.waitPacketSent();
+
+  LoRa.write(gD.rawLat);
+  LoRa.write(gD.rawLng);
+  LoRa.write(gD.rawSpeed);
+  LoRa.write(gD.rawAltitude);
 
   //String gpsData = String(gD.rawLat) + "-" + String(gD.rawLng) + "-" + String(gD.rawSpeed) + "-" + String(gD.rawAltitude);
   //int dataLength = gpsData.length(); dataLength++;
@@ -321,7 +329,11 @@ bool disconnectDrone() {
 }
 
 void checkStatus() {
-  
+//  gD.rawLat = gps.location.rawLat().billionths;
+//      gD.rawLng = gps.location.rawLng().billionths;
+//      gD.rawSpeed = gps.speed.mps();
+//      gD.rawAltitude = gps.altitude.meters();
+//  String message = String(gD.rawLat) + ""
 }
 
 void assignTask() {

@@ -28,10 +28,10 @@ char topic8[] = "drone/8/landDrone";
 char topic9[] = "drone/9/status";
 
 typedef struct { 
-  uint32_t rawLat;
-  uint32_t rawLng;
-  double rawSpeed;
-  double rawAltitude;
+  uint32_t rawLat = 0;
+  uint32_t rawLng = 0;
+  uint32_t rawSpeed = 0;
+  uint32_t rawAltitude = 0;
 } GPS_DATA;
 
 GPS_DATA gD;
@@ -207,6 +207,14 @@ void loop() {
   }
   mqttClient.loop();
   receiveDataStream();
+
+//  if(gD.rawLat > 0) {
+//    Serial.println("GPS DATA: ");
+//    Serial.println(gD.rawLat);
+//    Serial.println(gD.rawLng);
+//    Serial.println(gD.rawSpeed);
+//    Serial.println(gD.rawAltitude);
+//  }
 }
 
 void displayOLED(String text) {
@@ -384,8 +392,8 @@ void receiveDataStream() {
     for(int i = 0; i < incLength; i++) {
       responseMessage[i] = (byte) LoRa.read();
     }
-    Serial.println("Size of text");
-    Serial.println(incLength);
+    //Serial.println("Size of text");
+    //Serial.println(incLength);
     //Serial.println(text);
     //...
 //    gD.rawLat = LoRa.read();
@@ -398,6 +406,10 @@ void receiveDataStream() {
     //  int inChar = LoRa.read();
     //  gpsData += (char)inChar;
     //}
+    gD.rawLat = (uint32_t)LoRa.read();
+    gD.rawLng = (uint32_t)LoRa.read();
+    gD.rawSpeed = (uint32_t)LoRa.read();
+    gD.rawAltitude = (uint32_t)LoRa.read();
     
     LoRa.packetRssi();
     //int length = sizeof(text);
