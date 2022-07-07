@@ -378,10 +378,10 @@ void assignTask() {
   if(cmd.mode == 'P') {
     
   }
-  if(cmd.mode == '') {
+  if(cmd.mode == 'x') {
     
   }
-  if(cmd.mode == '') {
+  if(cmd.mode == 'y') {
     
   }
 }
