@@ -353,8 +353,13 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.print("Message arrived [");
     Serial.print(topic);
     Serial.print("] ");
+    Serial.println();
+    Serial.println("LENGTH: " );
+    Serial.print(length);
+    Serial.println();
     for(int i = 0; i < length; i++) {
-      Serial.print((char)payload[i]);
+      Serial.print((int)payload[i]);
+      Serial.print("\t");
     }
     sendDataStream(payload, length, 4);
     Serial.println();

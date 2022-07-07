@@ -289,18 +289,22 @@ void checkCommands() {
   if (cmd.cmd == 5) {
     Serial.println("Assigning task to drone...");
     assignTask();
+    cmd.cmd = 0;
   }
   if (cmd.cmd == 6) {
     Serial.println("Starting the fly procedure...");
     bool isFlight = isFlying();
+    cmd.cmd = 0;
   }
   if (cmd.cmd == 7) {
     Serial.println("Calling the drone home...");
     callDrone();
+    cmd.cmd = 0;
   }
   if (cmd.cmd == 8) {
     Serial.println("Landing the drone home...");
     landDrone();
+    cmd.cmd = 0;
   }
 
 }
@@ -384,7 +388,32 @@ void receiveDataStream() {
     Serial.print((int) responseMessage[i]);
     Serial.print("\t");
   }
+  int commandNo = (uint8_t)LoRa.read();
+  LoRa.packetRssi();
   Serial.println();
+  Serial.println("LENGTH: ");
+  Serial.print(byteArrayLength);
+  Serial.println();
+  if(commandNo == 2) {
+     Serial.println("Just 2 commands !:O");
+     cmd.cmd = (byte) responseMessage[0];
+     cmd.ack = (byte) responseMessage[1];
+  } else if(commandNo == 6) {
+     Serial.println("We have lat lng and altitude + command ");
+     cmd.cmd = (byte) responseMessage[0];
+     cmd.ack = (byte) responseMessage[1];
+     cmd.targetLat = (uint32_t)responseMessage[2];
+     cmd.targetLng = (uint32_t)responseMessage[3];
+     cmd.mode = (char)responseMessage[4];
+     cmd.targetAltitude = (uint32_t)responseMessage[5];
+     Serial.println((int)cmd.cmd);
+     Serial.println((int)cmd.cmd);
+     Serial.println(cmd.targetLat);
+     Serial.println(cmd.targetLng);
+     Serial.println(cmd.mode);
+     Serial.println(cmd.targetAltitude);
+     Serial.println("****************************");
+  }
  
  
   /*
