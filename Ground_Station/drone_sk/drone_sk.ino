@@ -100,6 +100,10 @@ COMMAND cmd;
 
 
 bool executeTask = false;
+bool patrolTask = false;
+bool surveyTask = false;
+bool protectTask = false;
+
 
 // SERVO 
 Servo motor1;
@@ -191,6 +195,8 @@ void loop() {
  //protothreadReadIMU(&pt3);
  readGyroDataIMU();
  //displayGyroStats(elapsedTime);
+
+ _executeTask();
  
 }
 
@@ -507,14 +513,14 @@ void checkStatus() {
 }
 
 void assignTask() {
-  if(cmd.mode == 'P') {
-    
+  if(cmd.mode == 'p') {
+    patrolTask = true;
   }
-  if(cmd.mode == 'x') {
-    
+  if(cmd.mode == 's') {
+    surveyTask = true;
   }
-  if(cmd.mode == 'y') {
-    
+  if(cmd.mode == 'r') {
+    protectTask = true;
   }
 }
 
@@ -544,4 +550,33 @@ void testSpinMotors() {
     motor3.write(speed_3);
     motor4.write(speed_4);
   }
+}
+
+void _executeTask() {
+  if(executeTask) {
+    if(patrolTask) {
+      runningTaskP();
+    }
+    if(surveyTask) {
+      runningTaskS();
+    }
+    if(protectTask) {
+      runningTaskR();
+    }
+  }
+}
+
+void runningTaskP() {
+  // Starting Patrol task
+  
+}
+
+void runningTaskS() {
+  // Starting Survey task
+  
+}
+
+void runningTaskR() {
+  // Starting Protect task
+  
 }
