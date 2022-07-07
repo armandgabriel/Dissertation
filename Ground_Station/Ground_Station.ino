@@ -263,6 +263,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
     for(int i = 0; i < length; i++) {
       Serial.print((char)payload[i]);
     }
+    Serial.println();
+    Serial.println("Length: " );
+    Serial.print(length);
+    Serial.println();
+    Serial.println(length);
     sendDataStream(payload, length, 0);
     Serial.println();
   }
@@ -275,6 +280,9 @@ void callback(char* topic, byte* payload, unsigned int length) {
 //      Serial.print((char)payload[i]);
 //    }
     Serial.println((char*)payload);
+    Serial.println("Length: " );
+    Serial.print(length);
+    Serial.println();
     Serial.println(length);
     sendDataStream(payload, length, 0);
     Serial.println();
@@ -420,15 +428,17 @@ void reconnect() {
 }
 
 // LoRa
-void sendDataStream(byte* message, unsigned int length, int commandNo) {
+void sendDataStream(byte* message, unsigned int length, unsigned int commandNo) {
   displayOLED("SENDING LoRa message...", "Content Length", length + "", "");
   LoRa.beginPacket();
   //LoRa.print(message);
+  LoRa.write(length);
   LoRa.write((uint8_t*)message, length);
+  Serial.println(commandNo);
   if(commandNo == 4) {
-    LoRa.write(6);
+    LoRa.write((uint8_t)6);
   } else {
-    LoRa.write(2);
+    LoRa.write((uint8_t)2);
   }
   LoRa.endPacket();
 }

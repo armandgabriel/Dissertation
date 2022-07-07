@@ -8,8 +8,11 @@
 
 static struct pt pt1; // command proto
 static struct pt pt2;
+//static struct pt pt3; // IMU Thread
 
 bool sendGPSData = false;
+
+static bool isCheckCommands = false;
 
 static int protothreadCheckCommands(struct pt *pt)
 {
@@ -24,19 +27,45 @@ static int protothreadCheckCommands(struct pt *pt)
   PT_END(pt);
 }
 
-static int protothreadReadDPS(struct pt *pt) 
+static int protothreadReadGPS(struct pt *pt) 
 {
-  static unsigned long lastTimeCheckedCommand = 0;
+  static unsigned long lastTimeReadGPS = 0;
   PT_BEGIN(pt);
   while(1) {
-    lastTimeCheckedCommand = millis();
-    PT_WAIT_UNTIL(pt, millis() - lastTimeCheckedCommand > 10);
+    lastTimeReadGPS = millis();
+    PT_WAIT_UNTIL(pt, millis() - lastTimeReadGPS > 10);
     //Serial.println("Checking GPS");
     readGPS();
-    PT_WAIT_UNTIL(pt, millis() - lastTimeCheckedCommand > 10);
+    PT_WAIT_UNTIL(pt, millis() - lastTimeReadGPS > 10);
   }
   PT_END(pt);
 }
+
+typedef struct {
+  long x;
+  long y;
+  long z;
+} GYRO;
+
+GYRO gyroData;
+
+float x, y, z;
+
+static int protothreadReadIMU(struct pt *pt) {
+  static unsigned long lastTimeCheckedIMU = 0;
+  
+  PT_BEGIN(pt);
+  while(1) {
+    
+    lastTimeCheckedIMU = millis();
+    PT_WAIT_UNTIL(pt, millis() - lastTimeCheckedIMU > 500);
+    readGyroDataIMU();
+    PT_WAIT_UNTIL(pt, millis() - lastTimeCheckedIMU > 500);
+  }
+  PT_END(pt);
+}
+
+bool isGyroUp = false;
 
 long lastTime = millis();
 bool isCKCmd = false;
@@ -68,6 +97,7 @@ typedef struct {
 } COMMAND;
 
 COMMAND cmd;
+
 
 bool executeTask = false;
 
@@ -108,12 +138,27 @@ void setup() {
 
 PT_INIT(&pt1);
 PT_INIT(&pt2);
+//PT_INIT(&pt3);
 
   // SET Motors pins
 //  motor1.attach(MOTOR_PIN_1);
 //  motor2.attach(MOTOR_PIN_2);
 //  motor3.attach(MOTOR_PIN_3);
 //  motor4.attach(MOTOR_PIN_4);
+
+
+// SETUP IMU
+  if(!IMU.begin()) {
+    Serial.println("Failed to init IMU");
+    while (1);
+  }
+  Serial.println();
+  Serial.print("Gyroscope sample rate = ");
+  Serial.print(IMU.gyroscopeSampleRate());
+  Serial.println(" HZ");
+  Serial.println();
+  Serial.println("Gyroscope in degrees/second");
+  Serial.println("X\tY\tZ");
 }
 
 void loop() {
@@ -139,11 +184,55 @@ void loop() {
  //checkCommands(elapsedTime);
  protothreadCheckCommands(&pt1);
   //testSpinMotors();
- protothreadReadDPS(&pt2);
+ protothreadReadGPS(&pt2);
 
  sendGPSDataF(elapsedTime);
 
+ //protothreadReadIMU(&pt3);
+ readGyroDataIMU();
+ //displayGyroStats(elapsedTime);
  
+}
+
+void readGyroDataIMU() {
+  
+  if(IMU.gyroscopeAvailable()) {
+      IMU.readGyroscope(x, y, z);
+      
+      gyroData.x = x;
+      //Serial.print(x);
+      
+      //Serial.print("\t");
+      
+      gyroData.y = y;
+      //Serial.print(y);
+      
+      //Serial.print("\t");
+      
+      gyroData.z = z;
+      //Serial.println(z);
+    }
+}
+
+void displayGyroStats(long elapsedTime) {
+  static long readGyro = 0;
+  readGyro = readGyro + elapsedTime;
+  if(readGyro >= 3000) {
+    isGyroUp = !isGyroUp;
+    if(isGyroUp) {
+      
+      if((gyroData.x > 0 || gyroData.x < 0) || 
+          (gyroData.y < 0 || gyroData.y > 0) || 
+          (gyroData.z < 0 || gyroData.z > 0) ) {
+        Serial.print(gyroData.x);
+        Serial.print("\t");
+        Serial.print(gyroData.y);
+        Serial.print("\t");
+        Serial.println(gyroData.z);
+      }
+      readGyro = readGyro - 3000;
+    }
+  }
 }
 
 void sendGPSDataF(long elapsedTime) {
@@ -288,12 +377,24 @@ void receiveDataStream() {
   if(packetSize == 0) {
     return;
   }
+  int byteArrayLength = LoRa.read();
+  byte* responseMessage = (byte*) malloc (byteArrayLength);
+  for(int i = 0; i < byteArrayLength; i++) {
+    responseMessage[i] = (byte) LoRa.read();
+    Serial.print((int) responseMessage[i]);
+    Serial.print("\t");
+  }
+  Serial.println();
+ 
+ 
+  /*
   String text = "";
   while(LoRa.available()) {
     int inChar = LoRa.read();
     text += (char) inChar;
   }
-  int commandNo = LoRa.read();
+  Serial.println(text);
+  int commandNo = (uint8_t)LoRa.read();
   LoRa.packetRssi();
   Serial.println(text);
 
@@ -312,12 +413,13 @@ void receiveDataStream() {
     index_T++;
   }
   Serial.println("PRINTING COMMANDS:");
+  Serial.println(commandNo);
   Serial.println(commands[0]);
   Serial.println(commands[1]);
   if(commandNo == 6) {
     cmd.targetLat = (uint32_t)LoRa.read();
-    cmd.targetLng = LoRa.read();
-    cmd.mode = LoRa.read();
+    cmd.targetLng = (uint32_t)LoRa.read();
+    cmd.mode = (char)LoRa.read();
     cmd.targetAltitude = (uint32_t)LoRa.read();
   }
   cmd.cmd = (byte) commands[0].toInt();
@@ -325,6 +427,7 @@ void receiveDataStream() {
   Serial.println("Command stack display:");
   Serial.println(cmd.cmd);
   Serial.println(cmd.ack);
+  */
 }
 
 bool startDrone() {
