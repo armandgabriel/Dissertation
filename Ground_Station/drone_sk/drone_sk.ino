@@ -6,6 +6,7 @@
 #include <Arduino_LSM6DS3.h>
 #include <pt.h>
 #include <Adafruit_BMP085.h>
+#include <SparkFun_ATECCX08a_Arduino_Library.h>
 
 #define JETSON_NANO_ADDRESS 0x6A
 
@@ -155,7 +156,7 @@ bool isReadBMP = false;
 
 void setup() {
   Serial.begin(9600);
-  while(!Serial);
+  //while(!Serial);
 
   Serial1.begin(9600);
   
