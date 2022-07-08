@@ -40,6 +40,14 @@ typedef struct {
 
 GPS_DATA gD;
 
+typedef struct {
+  byte stat;
+  byte risk;
+} STATUS_RISK;
+
+STATUS_RISK statusRisk;
+
+
 // Screen Setup
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -235,6 +243,17 @@ void displayGPSData(long elapsedTime) {
       } else {
         Serial.println("No GPS Data!");
       }
+      // send command to Android to record 
+      byte* arr = (byte*) malloc(8);
+      arr[0] = (byte)16;
+      arr[1] = (byte)17;
+      arr[2] = (byte)gD.rawLat;
+      arr[3] = (byte)gD.rawLng;
+      arr[4] = (byte)gD.rawSpeed;
+      arr[5] = (byte)gD.rawAltitude;
+      arr[6] = statusRisk.stat;
+      arr[7] = statusRisk.risk;
+      pub(topic9, arr, 9);
       readGD = readGD - 5000;
     }
     
@@ -451,7 +470,8 @@ void sendDataStream(byte* message, unsigned int length, unsigned int commandNo) 
 void receiveDataStream() {
   int packetSize = LoRa.parsePacket();
   if(packetSize) {
-
+  Serial.println("**************");
+  Serial.println("Received command from drone...");
     byte recep = LoRa.read();
     byte sender = LoRa.read();
     byte msgID = LoRa.read();
@@ -465,6 +485,12 @@ void receiveDataStream() {
     byte* responseMessage = (byte*)malloc(incLength);//[incLength];
     for(int i = 0; i < incLength; i++) {
       responseMessage[i] = (byte) LoRa.read();
+    }
+    Serial.println("Received from jetson nano?");
+    Serial.println((int)responseMessage[0]);
+    if(responseMessage[0] == 14) {
+      Serial.println("Sending jetson data");
+      pub(topic9, responseMessage, incLength);
     }
     //Serial.println("Size of text");
     //Serial.println(incLength);
@@ -484,6 +510,9 @@ void receiveDataStream() {
     gD.rawLng = (uint32_t)LoRa.read();
     gD.rawSpeed = (uint32_t)LoRa.read();
     gD.rawAltitude = (uint32_t)LoRa.read();
+
+    statusRisk.stat = LoRa.read();
+    statusRisk.risk = LoRa.read();
     
     LoRa.packetRssi();
     //int length = sizeof(text);

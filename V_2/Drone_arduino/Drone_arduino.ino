@@ -58,16 +58,16 @@ void setup() {
   // Serial communication setup
   Wire.begin(i2cAddress);
   Wire.onReceive(receiveJetsonEvent);                // The Jetson will send data.
-  Wire.onRequest(sendJetsonEvent);                   // The Arduino will send data.
+  //Wire.onRequest(sendJetsonEvent);                   // The Arduino will send data.
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  SEND_CMD.command = 3;
-  SEND_CMD.ack_Signature = 12;
-  sendJetsonEvent();
-  Serial.println("SEND COMMAND");
-  delay(1000);
+  //SEND_CMD.command = 3;
+  //SEND_CMD.ack_Signature = 12;
+  //sendJetsonEvent();
+  //Serial.println("SEND COMMAND");
+  //delay(1000);
 }
 
 
@@ -79,9 +79,13 @@ void receiveJetsonEvent(int bytes) {
   Serial.println("Request size: ");
   Serial.print(bytes);
   Serial.println();
-  Wire.readBytes((byte*) &RECEIVE_RESPONSE_CMD, sizeof RECEIVE_RESPONSE_CMD);
-  Serial.println(RECEIVE_RESPONSE_CMD.command);
-  Serial.println(RECEIVE_RESPONSE_CMD.ack_Signature);
+  byte* arr = (byte*)malloc(4);
+  Wire.readBytes(arr, 4);
+  for(int i = 0; i < 4; i++) {
+    Serial.print(arr[i]);
+    Serial.print("\t");
+  }
+  Serial.println();
   Serial.println("*******************************");
 }
 //            2. sendJetsonEvent()                 //
